@@ -1,4 +1,6 @@
 import tkinter as tk
+import cmath
+import sympy as sp
 
 # ── Paleta ────────────────────────────────────────────────────────────
 BG         = "#FFFDE7"
@@ -8,13 +10,23 @@ BTN_COMMON = dict(font=("Arial", 10, "bold"), relief="flat", cursor="hand2")
 
 # ── Matemática ────────────────────────────────────────────────────────
 def texto_a_numero(texto):
+    """Convierte texto a número, admitiendo expresiones simbólicas:
+    enteros, decimales, fracciones (1/2), raíces (sqrt(8)), pi, e, etc."""
     texto = texto.strip()
-    if "/" not in texto:
-        return float(texto)
-    num, den = texto.split("/")
-    if float(den) == 0:
-        raise ValueError("Denominador cero.")
-    return float(num) / float(den)
+    if not texto:
+        raise ValueError("Campo vacío.")
+    try:
+        expr = sp.sympify(texto, locals={"e": sp.E})
+    except Exception:
+        raise ValueError(f"Expresión inválida: '{texto}'")
+    if not expr.is_number:
+        raise ValueError(f"'{texto}' no es un número.")
+    valor = complex(sp.N(expr, 15))
+    if not cmath.isfinite(valor):
+        raise ValueError(f"'{texto}' no es un valor finito (¿división entre cero?).")
+    if abs(valor.imag) > 1e-9:
+        raise ValueError("No se admiten valores complejos.")
+    return valor.real
 
 
 def gauss_jordan(matriz, n):
@@ -105,8 +117,8 @@ def pantalla_pedir_matriz(n):
     def resolver():
         try:
             matriz = [[texto_a_numero(entradas_matriz[f][c].get()) for c in range(n + 1)] for f in range(n)]
-        except ValueError:
-            return error.config(text="Use numeros o fracciones tipo 1/2.")
+        except ValueError as e:
+            return error.config(text=str(e) or "Use numeros, fracciones (1/2), pi, sqrt(8), etc.")
         try:
             pantalla_resultado(gauss_jordan(matriz, n))
         except ValueError as e:
