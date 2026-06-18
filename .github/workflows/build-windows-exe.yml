@@ -1,0 +1,40 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Compilar Calculadora Gauss-Jordan (.exe)
+        run: pyinstaller --onefile --windowed --name "Calculadora_Gauss_Jordan" Calculadora_Gauss_Jordan.py
+
+      - name: Compilar Calculadora Valores y Vectores Propios (.exe)
+        run: pyinstaller --onefile --windowed --name "Calculadora_Valores_Propios" calculadora_valores_propios.py
+
+      - name: Subir los .exe como artefacto descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: calculadoras-exe
+          path: |
+            dist/Calculadora_Gauss_Jordan.exe
+            dist/Calculadora_Valores_Propios.exe
+          retention-days: 30
